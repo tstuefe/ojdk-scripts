@@ -61,12 +61,12 @@ function run_configure_and_possibly_make {
 cd "$OPENJDK_SOURCE_ROOT/$REPO_NAME"
 
 # update source
-pushd source
-set +e
-hg qpop
-set -e
-hg up -C
-popd
+#pushd source
+#set +e
+#hg qpop
+#set -e
+#hg up -C
+#popd
 
 WITH_BUILD_JDK="--with-build-jdk=../output-release/images/jdk"
 DISABLE_PCH="--disable-precompiled-headers"
