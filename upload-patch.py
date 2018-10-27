@@ -15,6 +15,7 @@ import shutil
 
 export_root_dir = '../../export'
 export_remote_url = 'cr.openjdk.java.net'
+export_remote_path = '/oj/home/stuefe/webrevs'
 export_remote_user = 'stuefe'
 webrev_location = '../../code-tools/webrev/webrev.ksh'
 
@@ -66,7 +67,7 @@ parser.add_argument("-v", "--verbose", dest="is_verbose",
                     help="Debug output", action="store_true")
 parser.add_argument("-p", "--patch", dest="patch_mode", help="Make a patch (default: make a webrev)", action="store_true")
 parser.add_argument("-n", "--webrev-number", dest="webrevno", type=int, help="Webrev number. By default, numbers are incremented automatically in the export dir.")
-parser.add_argument("-e", "--export-only", help="Omit upload - just export the patch or webrev to the export directory")
+parser.add_argument("-o", "--omit-upload", dest="omit_upload", help="Omit upload - just export the patch or webrev to the export directory")
 parser.add_argument("-y", dest="yesyes", help="Anser YES automatically to all questions")
 
 args = parser.parse_args()
@@ -158,5 +159,20 @@ else:
     trc("Creating webrev...")
     result = run_command_and_return_stdout(["ksh", webrev_location, "-o", full_export_path])
     print(result)
+    trc("Webrev successfully created - OK.")
+
+# upload to remote: For simplicity, I just transfer the whole patch dir, regardless if that transfers
+# older webrevs too. rsync will only transfer stuff not remote already.
+if args.omit_upload:
+    trc("--export-only specified: omitting upload.")
+else:
+    trc("Uploading patch...")
+    destination = export_remote_user + '@' + export_remote_url + ':' + export_remote_path
+    source = export_root_dir + '/' + patch_name
+    result = run_command_and_return_stdout(["rsync", "-avz", "-e", "ssh", source, destination])
+    print(result)
     trc("OK.")
+
+
+
 
