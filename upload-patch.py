@@ -58,6 +58,14 @@ def user_confirm(question):
             answer = None
 
 
+def build_webrev_path(patch_export_dir, webrev_number):
+    return patch_export_dir + '/webrev.' + '{:02d}'.format(webrev_number)
+
+def build_delta_webrev_path(patch_export_dir, webrev_number):
+    return patch_export_dir + '/webrev_delta.' + '{:02d}'.format(webrev_number)
+
+
+
 parser = argparse.ArgumentParser(
     description='Create a patch file or a numbered webrev; optionally upload it to a remote location (e.g. cr.ojdk.j.n)',
     formatter_class=argparse.RawTextHelpFormatter,
@@ -151,19 +159,19 @@ else:
     # ( export/<patch name>/webrev_<iteration>)
     webrev_number_first_invalid = 0
     webrev_number_last_valid = -1
-    while pathlib.Path(patch_export_directory + '/webrev_' + str(webrev_number_first_invalid)).exists():
+    while pathlib.Path(build_webrev_path(patch_export_directory, webrev_number_first_invalid)).exists():
         webrev_number_last_valid = webrev_number_first_invalid
         webrev_number_first_invalid += 1
 
     webrev_dir_path = None
     if args.overwrite_last_webrev and webrev_number_last_valid >= 0:
         # In overwrite mode, delete old webrev directory if needed.
-        webrev_dir_path = patch_export_directory + '/webrev_' + str(webrev_number_last_valid)
+        webrev_dir_path = build_webrev_path(patch_export_directory, webrev_number_last_valid)
         user_confirm('Remove pre-existing webrev directory: ' + webrev_dir_path)
         shutil.rmtree(webrev_dir_path)
         trc("Removed pre-existing directory at " + webrev_dir_path + ".")
     else:
-        webrev_dir_path = patch_export_directory + '/webrev_' + str(webrev_number_first_invalid)
+        webrev_dir_path = build_webrev_path(patch_export_directory, webrev_number_first_invalid)
 
     # Now create the new webrev
     result = run_command_and_return_stdout(["ksh", webrev_location, "-o", webrev_dir_path])
