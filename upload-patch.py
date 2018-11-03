@@ -1,9 +1,5 @@
 # !/usr/bin/env python3
 
-# upload a patch to cr.openjdk.java.net
-#
-# usage: upload-patch [-p|--patch-mode] [-n|--name name] 
-#
 
 
 import pathlib
@@ -103,13 +99,10 @@ parser = argparse.ArgumentParser(
     epilog=
     'This tool knows three modes:\n'
     '- Webrev Mode (default): a numbered webrev is created in the export dir.\n'
-    '  Tool expects exactly one outgoing change. applied in the mercurial patch queue,\n'
-    '  whose patch name will be used as name for the webrev.\n'
+    '  Tool expects exactly one outgoing change. \n'
     '- Delta Webrev Mode (-d): like normal Webrev Mode, save that we create\n'
     '  a delta webrev in addition to the full webrev. The tool expects two\n'
-    '  patches applied in the patch queue: the lower one being the patch base,\n'
-    '  whose name defines the patch name; the upper (tip) one being the delta\n'
-    '  (which one would later qfold into the lower full one).\n'
+    '  outgoing changes (base change + delta)\n'
     '- Patch Mode: Tool creates an (unnumbered) patch in the export dir.\n'
 )
 
