@@ -173,6 +173,7 @@ patch_name = outgoing_changes[0][1]
 trc("Patch name is " + patch_name)
 
 patch_export_directory = export_root_dir + '/' + patch_name
+pathlib.Path(patch_export_directory).mkdir(parents=True, exist_ok=True) 
 
 if args.patch_mode:
 
