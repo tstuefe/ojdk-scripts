@@ -1,7 +1,6 @@
 # !/usr/bin/env python3
 
 
-
 import pathlib
 import sys
 import argparse
@@ -76,7 +75,9 @@ def remove_prefix_from_string(s: str, prefix: str) -> str:
 # Returns a list of [(int, str)] tuples containing the local revision number and description, respectively,
 # of all outgoing changes. First one in the list is the oldest change, last one the youngest (tip).
 def get_outgoing_changes() -> list:
-    s = run_command_and_return_stdout(["hg", "outgoing", "-q", "-T", "{rev}###{desc}\n"])
+    # Note: print revision number and first line of patch description. The latter is used as base for the
+    # patch name unless a patch name is given via --patch-name.
+    s = run_command_and_return_stdout(["hg", "outgoing", "-q", "-T", "{rev}###{desc|firstline|lower}\n"])
     lines = s.splitlines()
     return_list = []
     for line in lines:
@@ -91,6 +92,12 @@ def get_outgoing_changes() -> list:
         list_entry_tuple = (revision_number, description)
         return_list.append(list_entry_tuple)
     return return_list
+
+
+# build up a patch name from a patch description text which may contain spaces, colons and so on.
+# The returned name shall have no space.
+def sanitize_patch_name(dirty_name: str) -> str:
+    return dirty_name.replace(' ', '-').replace(':', '-')
 
 
 parser = argparse.ArgumentParser(
@@ -123,6 +130,8 @@ parser.add_argument("-d", "--delta", dest="delta_mode",
                     action="store_true")
 parser.add_argument("-y", dest="yesyes", help="Automatically confirm all answers (use with care).")
 parser.add_argument("-u", "--upload", dest="upload", help="Upload to remote location", action="store_true")
+parser.add_argument("-s", "--name", dest="patch_name", help="Name of patch (by default, the name is generated "
+                    "from the first line of the mercurial change description).")
 
 args = parser.parse_args()
 if args.is_verbose:
@@ -154,7 +163,6 @@ else:
 
 # Patch-Mode, Webrev-Mode: need 1 outgoing changes.
 # Delta-Webrev-Mode: need 2 outgoing changes.
-patch_name = None
 if args.patch_mode:
     if len(outgoing_changes) != 1:
         sys.exit('We expect exactly one outgoing change in patch mode.')
@@ -166,14 +174,18 @@ else:
         if len(outgoing_changes) != 2:
             sys.exit('We expect exactly two outgoing changes for delta webrev mode.')
 
-# name of patch is the description of the only outgoing change (not delta) resp. the
-# description of the oldest outgoing change (delta mode) - in all cases, this is
-# the first list item
-patch_name = outgoing_changes[0][1]
+# name of patch is generated from the first line of the mercurial change description of the outgoing change. In delta
+# mode, from the first line of the mercurial change description of the base change.
+# However, with option --patch-name the name can be overwritten from the command line.
+patch_name = args.patch_name
+if patch_name is None:
+    patch_name = outgoing_changes[0][1]
+# Sanitize patch name
+patch_name = sanitize_patch_name(patch_name)
 trc("Patch name is " + patch_name)
 
 patch_export_directory = export_root_dir + '/' + patch_name
-pathlib.Path(patch_export_directory).mkdir(parents=True, exist_ok=True) 
+pathlib.Path(patch_export_directory).mkdir(parents=True, exist_ok=True)
 
 if args.patch_mode:
 
@@ -227,7 +239,7 @@ else:
 
         # Delta part: use -r <rev> where revision is the parent, which in this case is the base part.
         run_command_and_return_stdout(["ksh", webrev_location, "-o", delta_webrev_dir_path, "-r",
-                                      str(outgoing_changes[0][0])])
+                                       str(outgoing_changes[0][0])])
         trc("Created new delta webrev at " + delta_webrev_dir_path + " - OK.")
 
         # Full part: just run webrev normally without specifying a revision. It will pick up all outgoing changes,
