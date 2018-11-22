@@ -141,7 +141,7 @@ parser.add_argument("-o", "--overwrite-last-webrev", dest="overwrite_last_webrev
 parser.add_argument("-d", "--delta", dest="delta_mode",
                     help="[Webrev mode only]: Produce a delta webrev in addition to the full webrev.",
                     action="store_true")
-parser.add_argument("-y", dest="yesyes", help="Automatically confirm all answers (use with care).")
+parser.add_argument("-y", dest="yesyes", help="Automatically confirm all answers (use with care).", action="store_true")
 parser.add_argument("-u", "--upload", dest="upload", help="Upload to remote location", action="store_true")
 parser.add_argument("-n", "--name", dest="patch_name", help="Name of patch (by default, the name is generated "
                                                             "from the first line of the mercurial change description).")
