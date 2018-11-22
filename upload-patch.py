@@ -7,11 +7,24 @@ import argparse
 import subprocess
 import shutil
 
-export_root_dir = '../../export'
-export_remote_url = 'cr.openjdk.java.net'
-export_remote_path = '/oj/home/stuefe/webrevs'
-export_remote_user = 'stuefe'
-webrev_location = '../../code-tools/webrev/webrev.ksh'
+# Default values, can be overridden via command line:
+
+ojdk_root = '/shared/projects/openjdk'
+
+
+def build_export_dir():
+    return ojdk_root + '/export'
+
+
+def build_webrev_script_location():
+    return ojdk_root + '/code-tools/webrev/webrev.ksh'
+
+
+export_dir = build_export_dir()
+
+webrev_script_location = build_webrev_script_location()
+
+upload_url = 'stuefe@cr.openjdk.java.net:webrevs'
 
 
 def trc(text):
@@ -130,12 +143,53 @@ parser.add_argument("-d", "--delta", dest="delta_mode",
                     action="store_true")
 parser.add_argument("-y", dest="yesyes", help="Automatically confirm all answers (use with care).")
 parser.add_argument("-u", "--upload", dest="upload", help="Upload to remote location", action="store_true")
-parser.add_argument("-s", "--name", dest="patch_name", help="Name of patch (by default, the name is generated "
-                    "from the first line of the mercurial change description).")
+parser.add_argument("-n", "--name", dest="patch_name", help="Name of patch (by default, the name is generated "
+                                                            "from the first line of the mercurial change description).")
+
+parser.add_argument("--openjdk-root", dest="ojdk_root",
+                    help="Openjdk base directory. Serves as base directory for other paths. Default is " + ojdk_root)
+
+parser.add_argument("--export-dir", dest="export_dir",
+                    help="Patch export directory. Default: <openjdk-root-dir>/export.")
+
+parser.add_argument("--webrev-script-location", dest="webrev_script_location",
+                    help="Location of webrev script. Default: <openjdk-root-dir>/codetools/webrev.")
+
+parser.add_argument("--upload-url", dest="upload_url", help="Remote upload url in the form <username>@<host>:<path>. "
+                                                            "Example: john_smith@cr.openjdk.java.net:my_webrevs")
 
 args = parser.parse_args()
 if args.is_verbose:
     trc(str(args))
+
+if args.ojdk_root is not None:
+    ojdk_root = args.ojdk_root
+    # also update dependent settings
+    export_dir = build_export_dir()
+    webrev_script_location = build_webrev_script_location()
+
+if not pathlib.Path(ojdk_root).exists():
+    sys.exit("OpenJDK root directory not found (" + ojdk_root + ")")
+
+if args.webrev_script_location is not None:
+    webrev_script_location = webrev_script_location
+
+if not pathlib.Path(webrev_script_location).exists():
+    sys.exit("webrev.ksh not found at " + webrev_script_location + ".")
+
+if args.export_dir is not None:
+    export_dir = args.export_dir
+    if not pathlib.Path(export_dir).exists():
+        # Let this be an error if the directory was specified manually.
+        sys.exit("export directory not found at " + export_dir + ".")
+else:
+    if not pathlib.Path(export_dir).exists():
+        # If export directory name is default, create it on the fly if needed
+        pathlib.Path(export_dir).mkdir(parents=True, exist_ok=True)
+
+if args.upload_url is not None:
+    upload_url = args.upload_url
+
 
 # ---
 
@@ -184,15 +238,15 @@ if patch_name is None:
 patch_name = sanitize_patch_name(patch_name)
 trc("Patch name is " + patch_name)
 
-patch_export_directory = export_root_dir + '/' + patch_name
-pathlib.Path(patch_export_directory).mkdir(parents=True, exist_ok=True)
+patch_directory = export_dir + '/' + patch_name
+pathlib.Path(patch_directory).mkdir(parents=True, exist_ok=True)
 
 if args.patch_mode:
 
     # patch mode:
     # Produce new patch with hg export. Delete any pre-existing patches but ask
     # user first.
-    patch_file_path = patch_export_directory + '/' + patch_name + '.patch'
+    patch_file_path = patch_directory + '/' + patch_name + '.patch'
     if pathlib.Path(patch_file_path).exists():
         user_confirm('Remove pre-existing patch: ' + patch_file_path)
         pathlib.Path(patch_file_path).unlink()
@@ -207,7 +261,7 @@ else:
     # ( export/<patch name>/webrev_<iteration>)
     webrev_number_first_invalid = 0
     webrev_number_last_valid = -1
-    while pathlib.Path(build_webrev_path(patch_export_directory, webrev_number_first_invalid)).exists():
+    while pathlib.Path(build_webrev_path(patch_directory, webrev_number_first_invalid)).exists():
         webrev_number_last_valid = webrev_number_first_invalid
         webrev_number_first_invalid += 1
 
@@ -217,8 +271,8 @@ else:
     else:
         webrev_number = webrev_number_first_invalid
 
-    webrev_dir_path = build_webrev_path(patch_export_directory, webrev_number)
-    delta_webrev_dir_path = build_delta_webrev_path(patch_export_directory, webrev_number)
+    webrev_dir_path = build_webrev_path(patch_directory, webrev_number)
+    delta_webrev_dir_path = build_delta_webrev_path(patch_directory, webrev_number)
 
     # ask before overwriting
     if pathlib.Path(webrev_dir_path).exists():
@@ -232,26 +286,25 @@ else:
     # Now create the new webrev:
     if not args.delta_mode:
         # In normal (non-delta) mode, we just run webrev.ksh without specifying any revision
-        run_command_and_return_stdout(["ksh", webrev_location, "-o", webrev_dir_path])
+        run_command_and_return_stdout(["ksh", webrev_script_location, "-o", webrev_dir_path])
         trc("Created new webrev at " + webrev_dir_path + " - OK.")
     else:
         # In delta mode, we create two webrevs, one for the delta part, one for the full part.
 
         # Delta part: use -r <rev> where revision is the parent, which in this case is the base part.
-        run_command_and_return_stdout(["ksh", webrev_location, "-o", delta_webrev_dir_path, "-r",
+        run_command_and_return_stdout(["ksh", webrev_script_location, "-o", delta_webrev_dir_path, "-r",
                                        str(outgoing_changes[0][0])])
         trc("Created new delta webrev at " + delta_webrev_dir_path + " - OK.")
 
         # Full part: just run webrev normally without specifying a revision. It will pick up all outgoing changes,
         # which are two (base + delta)
-        run_command_and_return_stdout(["ksh", webrev_location, "-o", webrev_dir_path])
+        run_command_and_return_stdout(["ksh", webrev_script_location, "-o", webrev_dir_path])
         trc("Created full webrev (base + delta) at " + webrev_dir_path + " - OK.")
 
 # upload to remote: For simplicity, I just transfer the whole patch dir, regardless if that transfers
 # older webrevs too. rsync will only transfer stuff not remote already.
 if args.upload:
     trc("Uploading patch...")
-    destination = export_remote_user + '@' + export_remote_url + ':' + export_remote_path
-    source = patch_export_directory
-    result = run_command_and_return_stdout(["rsync", "-avz", "-e", "ssh", source, destination])
-    trc("Did upload " + patch_export_directory + " to " + destination + " - OK.")
+    source = patch_directory
+    result = run_command_and_return_stdout(["rsync", "-avz", "-e", "ssh", source, upload_url])
+    trc("Did upload " + patch_directory + " to " + upload_url + " - OK.")
