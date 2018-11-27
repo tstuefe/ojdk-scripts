@@ -2,6 +2,9 @@
 
 Small script to generate webrevs or patches and to optionally upload them to a remote server via ssh. Needs python3.
 
+It will generate the webrev or patch into a local export directory. It then will upload it via rsync to a remote
+server.
+
 ```
 usage: upload-patch.py [-h] [-v] [-p] [-d] [-y] [-n PATCH_NAME]
                        [--overwrite-last] [-u] [--openjdk-root OJDK_ROOT]
@@ -38,17 +41,33 @@ This tool knows two modes:
     - Webrevs are numbered (webrev_<n>, webrev_<n+1>). Each time the script is run a new webrev is created.
         - Exception: in "overwrite mode" `-o` or `--overwrite-last`, the highest-numbered webrev is overwritten instead 
     - Script expects exactly one outgoing change in the mercurial repository
+    - "delta mode" (`-d` or `--delta`): two outgoing changes are expected, the first being the base change, the top
+     one the delta change. Two webrevs are created from these, a delta webrev and a complete webrev.
 - Patch Mode (`-p` resp. `--patch-mode`): Tool creates a simple patch in the export directory. Unlike webrevs, the patch is not numbered. This is usually faster than generating webrevs.
 
-A special variant of webrev mode is "delta mode" (`-d` or `--delta`). Two outgoing changes are expected, the first being
- the base change, the top one the delta change. Two webrevs are created, a delta webrev for the delta change, a complete
-webrev for both changes.
+## Directories
 
-### Notes:
+By default, the script expects the following directory structure:
 
-- *patch name* (name of patch directory) is automatically generated from the mercurial change description, but can be overridden with `-n` or `--name`.
 
-## How to use it
+```
+/shared/projects/openjdk
+   |
+   |-- codetools
+   |     |
+   |     |-- webrev
+   |           |
+   |           webrev.ksh
+   |
+   |-- export
+         |
+         |-- <patch directories are generated here>
+          
+```
+
+Directory locations can be overwritten via command line (`--openjdk-root`, `--export-dir`, `--webrev-script-location`). 
+
+## Examples
 
 
 Cd into the jdk repository. Commit or `hg qrefresh` all outstanding changes.
