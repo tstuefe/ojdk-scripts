@@ -1,5 +1,6 @@
-# Easy webrev generation/upload with upload-patch.py
+# Easy webrev generation/upload with [upload-patch.py](upload-patch.py)
 
+Small script to generate webrevs or patches and to optionally upload them to a remote server via ssh. Needs python3.
 
 ```
 usage: upload-patch.py [-h] [-v] [-p] [-d] [-y] [-n PATCH_NAME]
