@@ -44,7 +44,7 @@ fi
 function run_configure_and_possibly_make {
     cd "$1"
     set +e
-    bash ../source/configure --with-boot-jdk=../../jdks/openjdk10 $3 $4 $5 > "/tmp/build-${REPO_NAME}-$1.log" 2>&1
+    bash ../source/configure --with-boot-jdk=../../jdks/sapmachine11 $3 $4 $5 > "/tmp/build-${REPO_NAME}-$1.log" 2>&1
     if [ "$2" == "1" ]; then
         echo "Running full make for $1..."
         make clean images LOG=debug >> "/tmp/build-${REPO_NAME}-$1.log" 2>&1

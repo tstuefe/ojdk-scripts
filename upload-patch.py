@@ -114,16 +114,37 @@ def sanitize_patch_name(dirty_name: str) -> str:
 
 
 parser = argparse.ArgumentParser(
-    description='Create a patch file or a numbered webrev; optionally upload it to a remote location (e.g. cr.ojdk.j.n)',
+    description='Create a numbered webrev or a patch and optionally uploads it to a remote server using ssh.',
     formatter_class=argparse.RawTextHelpFormatter,
     epilog=
-    'This tool knows three modes:\n'
-    '- Webrev Mode (default): a numbered webrev is created in the export dir.\n'
-    '  Tool expects exactly one outgoing change. \n'
-    '- Delta Webrev Mode (-d): like normal Webrev Mode, save that we create\n'
-    '  a delta webrev in addition to the full webrev. The tool expects two\n'
-    '  outgoing changes (base change + delta)\n'
-    '- Patch Mode: Tool creates an (unnumbered) patch in the export dir.\n'
+    'This tool knows two modes:\n'
+    '- Webrev Mode (default): a numbered webrev is created in the export directory. The generated webrevs are \n'
+    '  numbered in ascending order.\n'
+    '- Patch Mode: Tool creates an (unnumbered) patch in the export directory.\n'
+    'In addition, the tool can be used to generate delta webrevs, consisting of a base webrev and a delta webrev.\n'
+    '\n'
+    'Examples:\n'
+    '\n'
+    'upload-patch.py (no arguments)\n'
+    '\n'
+    '  generates a numbered webrev from the outgoing change.\n'
+    '\n'
+    'upload-patch.py -vp\n'
+    '\n'
+    '  generates a patch file from the outgoing change, verbose mode.\n'
+    '\n'
+    'upload-patch.py -u --upload-url thomas@cr.openjdk.java.net:my-webrevs\n'
+    '\n'
+    '  generates a numbered webrev from the outgoing change and uploads it to cr.openjdk.java.net\n'
+    '\n'
+    'upload-patch.py -u --upload-url thomas@cr.openjdk.java.net:my-webrevs\n'
+    '\n'
+    '  generates a numbered webrev from the outgoing change and uploads it to cr.openjdk.java.net\n'
+    '\n'
+    'upload-patch.py -d -u --overwrite-last --upload-url thomas@cr.openjdk.java.net:my-webrevs\n'
+    '\n'
+    '  generates a numbered delta webrev (base webrev and delta) from two outgoing changes - overwriting the last one\n'
+    '  in the export directory - and uploads them both to cr.openjdk.java.net\n'
 )
 
 # Optional args
@@ -131,29 +152,36 @@ parser = argparse.ArgumentParser(
 parser.add_argument("-v", "--verbose", dest="is_verbose",
                     help="Debug output", action="store_true")
 parser.add_argument("-p", "--patch-mode", dest="patch_mode",
-                    help="Patch Mode (default is Webrev Mode). In Patch Mode, creates a simple patch (diff) using hg "
-                         "export.",
-                    action="store_true")
-parser.add_argument("-o", "--overwrite-last-webrev", dest="overwrite_last_webrev",
-                    help="[Webrev mode only]: Overwrite the last webrev (\"webrev_<n>\"). If not specified, "
-                         "a new webrev (\"webrev_<n+1>\") is created.",
+                    help="Patch mode (default: webrev mode). In patch mode a single unnumbered patch is generated",
                     action="store_true")
 parser.add_argument("-d", "--delta", dest="delta_mode",
-                    help="[Webrev mode only]: Produce a delta webrev in addition to the full webrev.",
+                    help="[Webrev mode only]: Delta mode: Produce a delta webrev in addition to the full webrev. "
+                         "Script expects two outgoing changes, not one (base change + delta).",
                     action="store_true")
-parser.add_argument("-y", dest="yesyes", help="Automatically confirm all answers (use with care).", action="store_true")
-parser.add_argument("-u", "--upload", dest="upload", help="Upload to remote location", action="store_true")
-parser.add_argument("-n", "--name", dest="patch_name", help="Name of patch (by default, the name is generated "
-                                                            "from the first line of the mercurial change description).")
+
+parser.add_argument("-y", dest="yesyes", help="Autoconfirm (use with care).", action="store_true")
+
+parser.add_argument("-n", "--name", dest="patch_name",
+                    help="Name of patch directory (when omitted, name is generated from the mercurial change "
+                         "description).")
+
+parser.add_argument("--overwrite-last", dest="overwrite_last_webrev",
+                    help="[Webrev mode only]: Overwrite the last webrev (\"webrev_<n>\"). By default, a new webrev "
+                         "with is generated each time the script is run (\"webrev_<n+1>\").",
+                    action="store_true")
+
+parser.add_argument("-u", "--upload", dest="upload", help="Upload to remote location (see --upload-url)",
+                    action="store_true")
 
 parser.add_argument("--openjdk-root", dest="ojdk_root",
-                    help="Openjdk base directory. Serves as base directory for other paths. Default is " + ojdk_root)
+                    help="Openjdk base directory - base for export directory and webrev script location. "
+                         "Default is " + ojdk_root)
 
 parser.add_argument("--export-dir", dest="export_dir",
-                    help="Patch export directory. Default: <openjdk-root-dir>/export.")
+                    help="Patch export base directory. Default: <openjdk-root-dir>/export.")
 
 parser.add_argument("--webrev-script-location", dest="webrev_script_location",
-                    help="Location of webrev script. Default: <openjdk-root-dir>/codetools/webrev.")
+                    help="Location of webrev script. Default: <openjdk-root-dir>/codetools/webrev/webrev.ksh.")
 
 parser.add_argument("--upload-url", dest="upload_url", help="Remote upload url in the form <username>@<host>:<path>. "
                                                             "Example: john_smith@cr.openjdk.java.net:my_webrevs")
@@ -190,6 +218,9 @@ else:
 if args.upload_url is not None:
     upload_url = args.upload_url
 
+# upload-url must have the rsync form of: [USER@]HOST:DEST
+if ":" not in upload_url:
+    sys.exit("invalid upload url ([USER@]HOST:DEST expected)")
 
 # ---
 
