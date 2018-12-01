@@ -10,37 +10,52 @@ import subprocess
 
 # run_builds [options] all|default|release+fastdebug+slowdebug+nopch+zero
 # [options]  -c codeline
-#           -i incremental build
-
-
+#            -i incremental build
 
 ojdk_root = '/shared/projects/openjdk'
+target = 'images'
+variants_to_build = None;
 
-all_codelines = [ # jdk12
-                 'jdk-jdk', 'jdk-submit',
-                  # jdk11u
-                 'jdk-jdk11u', 'jdk-submit11u',
-                  # jdk8u
-                 'jdk8u']
+# define codelines and their attributes
+codelines_and_attributes = (
+    # [ <codeline name>, <boot jdk to use>, <needs hgforest> ]
+    ( 'jdk-jdk',        'openjdk11',        False ), # jdk12
+    ( 'jdk-submit',     'openjdk11',        False ), # jdk12
+    ( 'jdk-jdk11u',     'openjdk10',        False ),
+    ( 'jdk-jdk8u',      'openjdk8',         True )
+)
 
-boot_jdks = ['openjdk11', 'openjdk11',
-             'openjdk10', 'openjdk10',
-             'openjdk8']
+def valid_codelines:
+    result = []
+    for x in codelines_and_attributes:
+        result.append(x[0])
+    return result
 
+# define build variants and their attributes
+build_variants_and_attributes = (
+    # <name>, <needs release as build jdk>, <configure options>
+    ( 'release', False, '--with-debug-level=release' ),
+    ( 'slowdebug', True, '--with-debug-level=slowdebug' ),
+    ( 'fastdebug', True, '--with-debug-level=fastdebug' ),
+    ( 'fastdebug-nopch', True, '--with-debug-level=fastdebug --disable-precompiled-headers' ),
+    ( 'fastdebug-zero', True, '--with-debug-level=fastdebug --with-jvm-variants=zero' ),
+)
 
+def valid_build_variants:
+    result = []
+    for x in build_variants_and_attributes:
+        result.append(x[0])
+    return result
 
-def output_dir_for_suffix(suffix):
-    return ojdk_root + '/output-' + suffix
-
+def output_dir_for_variant(variant):
+    return ojdk_root + '/output-' + variant
 
 def trc(text):
     print("--- " + text)
 
-
 def verbose(text):
     if args.is_verbose:
         print("--- " + text)
-
 
 def run_command_and_return_stdout(command):
     verbose('calling: ' + ' '.join(command))
@@ -54,40 +69,50 @@ def run_command_and_return_stdout(command):
     verbose('out: ' + stdout)
     return stdout
 
-
 parser = argparse.ArgumentParser(
     description='Runs a sequence of OpenJDK builds.'
 )
 
-parser.add_argument("-c", "--codeline",
-                    help="Codeline (repository) to build.",
-                    choices=all_codelines)
+valid_codelines = valid_codelines()
+default_codeline = valid_codelines[0]
+
+parser.add_argument("-c", "--codeline", default=default_codeline,
+                    help="Codeline (repository) to build. Default: %(default)s.",
+                    choices=valid_codelines)
 
 parser.add_argument("-v", "--verbose", dest="is_verbose",
                     help="Debug output", action="store_true")
 
-parser.add_argument("--incremental-build", dest="incremental_build",
-                    help="Does an incremental build (default is to do a full scratch build).",
+parser.add_argument("-m", "--mode",
+                    choices=["full", "incremental"], default="full",
+                    help="Mode: full - runs a full build (configure + clean + build). "
+                         "incremental - runs an incremental build, avoiding configure + clean."
+                         "Default: %(default)s."
+                    )
+
+parser.add_argument("--pull",
+                    help="Pull changes from upstream first before building. Fails if there are uncommitted changes in the"
+                         "workspace or local changes applied (specify --qpop to pop local mq changes)", action="store_true"
+                    )
+
+parser.add_argument("--qpop",
+                    help="Pop mq changes before building. Will fail if there are uncommitted changes in the workspace.",
+                    action="store_true"
+                    )
+
+parser.add_argument("-t", "--target", default="images",
+                    help="Overwrite the build target name(s). By default, \"images\" is built.",
                     action="store_true")
 
-parser.add_argument("-t", "--target",
-                    help="Overwrite the target name(s). By default, \"images\" is built.",
-                    action="store_true")
-
-parser.add_argument("--openjdk-root", dest="ojdk_root",
-                    help="Openjdk base directory. Serves as base directory for other paths. Default is " + ojdk_root)
-
-# positional option:
-parser.add_argument("builds_to_run", dest="ojdk_root",
-                    help="Openjdk base directory. Serves as base directory for other paths. Default is " + ojdk_root)
+parser.add_argument("--openjdk-root", dest="ojdk_root", default=ojdk_root,
+                    help="Openjdk base directory. Serves as base directory for other paths. Default: %(default)s.")
 
 
 args = parser.parse_args()
 if args.is_verbose:
     trc(str(args))
 
-if args.ojdk_root is not None:
-    ojdk_root = args.ojdk_root
+ojdk_root = args.ojdk_root
 
 target = "images"
 if args.target is not None:
