@@ -200,7 +200,7 @@ if not pathlib.Path(ojdk_root).exists():
     sys.exit("OpenJDK root directory not found (" + ojdk_root + ")")
 
 if args.webrev_script_location is not None:
-    webrev_script_location = webrev_script_location
+    webrev_script_location = args.webrev_script_location
 
 if not pathlib.Path(webrev_script_location).exists():
     sys.exit("webrev.ksh not found at " + webrev_script_location + ".")
