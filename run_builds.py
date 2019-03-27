@@ -31,8 +31,8 @@ def source_dir():
 # define codelines and their attributes
 codelines_and_attributes = (
     # [ <codeline name>, <boot jdk to use>, <needs hgforest> ]
-    ('jdk-jdk', 'openjdk11', False),  # jdk12
-    ('jdk-submit', 'openjdk11', False),  # jdk12
+    ('jdk-jdk', 'sapmachine12', False),  # jdk12
+    ('jdk-submit', 'sapmachine12', False),  # jdk12
     ('jdk-jdk11u', 'openjdk10', False),
     ('jdk-jdk8u', 'openjdk8', True)
 )
@@ -231,11 +231,10 @@ parser.add_argument("--qpop", default=False,
                     action="store_true")
 
 parser.add_argument("-t", "--target", default="images",
-                    help="Overwrite the build target name(s). By default, \"images\" is built.",
-                    action="store_true")
+                    help="Overwrite the build target name(s). By default, \"images\" is built.")
 
 parser.add_argument("--dry-run", dest="dry_run", default=False, action="store_true",
-                    help="Do not do anything, just act as if you did.")
+                    help="Squawk but don't leap.")
 
 parser.add_argument("--openjdk-root", dest="ojdk_root", default=ojdk_root,
                     help="Openjdk base directory. Serves as base directory for other paths. Default: %(default)s.")
