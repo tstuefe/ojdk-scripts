@@ -49,3 +49,15 @@ else
     echo "Found source. Skipping clone."
 fi
 
+
+CDT_WS_DIR="cdt-ws-${REPO_NAME}"
+if [ ! -d $CDT_WS_DIR ]; then
+    mkdir $CDT_WS_DIR
+    cd $CDT_WS_DIR
+    git clone https://github.com/tstuefe/ojdk-cdt.git
+    cd ..
+fi
+
+
+
+
