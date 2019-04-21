@@ -45,9 +45,11 @@ if [ ! -d "source/.hg" ]; then
     cd source
     hg up
     hg pull -u
+    cd ..
 else
     echo "Found source. Skipping clone."
 fi
+
 
 
 CDT_WS_DIR="cdt-ws-${REPO_NAME}"
