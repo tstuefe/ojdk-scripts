@@ -33,8 +33,11 @@ codelines_and_attributes = (
     # [ <codeline name>, <boot jdk to use>, <needs hgforest> ]
     ('jdk-jdk', 'sapmachine12', False),  # jdk12
     ('jdk-submit', 'sapmachine12', False),  # jdk12
-    ('jdk-jdk11u', 'openjdk10', False),
-    ('jdk-jdk8u', 'openjdk8', True)
+    ('jdk-jdk11u', 'sapmachine11', False),
+    ('jdk-jdk8u', 'oraclejdk8', True),
+    ('sapmachine-head', 'sapmachine12', False),
+    ('sapmachine-12',   'sapmachine11', False),
+    ('sapmachine-11',   'sapmachine11', False),
 )
 
 
@@ -80,7 +83,7 @@ def variant_data_by_name(name: str) -> list:
 # a build variant combination is a set of build variants, with a shorthand moniker
 build_variant_combos = (
     # name, [ array of build variants ]
-    ('some', ['fastdebug', 'release']),
+    ('some', ['release', 'fastdebug', 'slowdebug']),
     ('all', valid_build_variants())
 )
 
@@ -160,8 +163,8 @@ def run_build_for_variant(codeline, variant_name, mode):
 
     configure_options.append("--with-boot-jdk=" + ojdk_root + "/jdks/" + boot_jdk)
 
-    # add release jdk as build jdk if this is any variant other than release
-    if variant_name != "release":
+    # add release jdk as build jdk if we happen to have it
+    if variant_name != "release" and pathlib.Path(output_dir_for_variant("release") + "/images/jdk/bin/java").exists():
         configure_options.append("--with-build-jdk=" + output_dir_for_variant("release") + "/images/jdk")
 
     verbose("Configure options: " + str(configure_options))
@@ -300,28 +303,14 @@ if args.pull:
     os.chdir(curdir)
 
 # Now build.
-
-have_built_release_already = False
-
+# If 'release' is in the list of things to build, build it first
+if 'release' in variants_to_build:
+    variants_to_build.remove('release')
+    variants_to_build = ['release'] + variants_to_build
+    print(variants_to_build)
+        
 for this_variant_name in variants_to_build:
     verbose("Variant: " + this_variant_name)
-    if this_variant_name != "release":
-        if not have_built_release_already:
-            verbose("Need a release jkd to be used as build jdk...")
-            # we need a full release jdk even to run configure for any other variant since the configure script checks
-            # the jdk. Build one if there is none already; if there is, we assume it is still good.
-            if not pathlib.Path(output_dir_for_variant("release") + "/images/jdk/bin/java").exists():
-                verbose("Lets build that first.")
-                run_build_for_variant(args.codeline, "release", "full")
-            else:
-                verbose("Not needed, found one.")
-
-            variants_to_build.remove("release")
-            have_built_release_already = True
-
-    # build this variant
     run_build_for_variant(args.codeline, this_variant_name, args.mode)
-    if this_variant_name == "release":
-        have_built_release_already = True
 
 
