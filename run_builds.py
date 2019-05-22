@@ -31,8 +31,9 @@ def source_dir():
 # define codelines and their attributes
 codelines_and_attributes = (
     # [ <codeline name>, <boot jdk to use>, <needs hgforest> ]
-    ('jdk-jdk', 'sapmachine12', False),  # jdk12
-    ('jdk-submit', 'sapmachine12', False),  # jdk12
+    ('jdk-jdk', 'sapmachine12', False),
+    ('jdk-sandbox', 'sapmachine12', False),
+    ('jdk-submit', 'sapmachine12', False),
     ('jdk-jdk11u', 'sapmachine11', False),
     ('jdk-jdk8u', 'oraclejdk8', True),
     ('sapmachine-head', 'sapmachine12', False),
