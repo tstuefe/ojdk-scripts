@@ -166,8 +166,8 @@ def run_build_for_variant(codeline, variant_name, mode):
     configure_options.append("--with-boot-jdk=" + ojdk_root + "/jdks/" + boot_jdk)
 
     # add release jdk as build jdk if we happen to have it
-    if variant_name != "release" and pathlib.Path(output_dir_for_variant("release") + "/images/jdk/bin/java").exists():
-        configure_options.append("--with-build-jdk=" + output_dir_for_variant("release") + "/images/jdk")
+#    if variant_name != "release" and pathlib.Path(output_dir_for_variant("release") + "/images/jdk/bin/java").exists():
+#        configure_options.append("--with-build-jdk=" + output_dir_for_variant("release") + "/images/jdk")
 
     verbose("Configure options: " + str(configure_options))
 
