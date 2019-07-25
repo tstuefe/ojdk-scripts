@@ -38,8 +38,8 @@ codelines_and_attributes = (
     ('jdk-updates-jdk11u', 'sapmachine11', False),
     ('jdk-jdk8u', 'oraclejdk8', True),
     ('sapmachine-head', 'sapmachine12', False),
-    ('sapmachine-12',   'sapmachine11', False),
-    ('sapmachine-11',   'sapmachine11', False),
+    ('sapmachine-12', 'sapmachine11', False),
+    ('sapmachine-11', 'sapmachine11', False),
 )
 
 
@@ -137,7 +137,7 @@ def run_command_and_return_stdout(command):
     except subprocess.CalledProcessError as e:
         trc('Command failed ' + ' '.join(command))
         print(e)
-        sys.exit('Sorry :-(')
+        sys.exit('Sowwy :-(')
     stdout = stdout.decode("utf-8")
     verbose('out: ' + stdout)
     return stdout
@@ -154,7 +154,7 @@ def are_there_uncommitted_changes_in_workspace():
 
 
 # run one build for the given variant and the given mode (see --mode)
-def run_build_for_variant(codeline, variant_name, mode):
+def run_build_for_variant(codeline, variant_name, mode, build_jdk):
     verbose("Building: codeline " + codeline + ", variant: " + variant_name + ", mode: " + mode)
 
     codeline_data = codeline_data_by_name(codeline)
@@ -165,9 +165,8 @@ def run_build_for_variant(codeline, variant_name, mode):
 
     configure_options.append("--with-boot-jdk=" + ojdk_root + "/jdks/" + boot_jdk)
 
-    # add release jdk as build jdk if we happen to have it
-#    if variant_name != "release" and pathlib.Path(output_dir_for_variant("release") + "/images/jdk/bin/java").exists():
-#        configure_options.append("--with-build-jdk=" + output_dir_for_variant("release") + "/images/jdk")
+    if build_jdk is not None:
+        configure_options.append("--with-build-jdk=" + build_jdk)
 
     verbose("Configure options: " + str(configure_options))
 
@@ -244,6 +243,9 @@ parser.add_argument("--dry-run", dest="dry_run", default=False, action="store_tr
 parser.add_argument("--openjdk-root", dest="ojdk_root", default=ojdk_root,
                     help="Openjdk base directory. Serves as base directory for other paths. Default: %(default)s.")
 
+parser.add_argument("--build-jdk", dest="build_jdk",
+                    help="Build jdk to use, translates to --with-build-jdk option. If omitted, this option is omitted on configure.")
+
 # positional args
 parser.add_argument("build_variants", default=build_variant_combos[0][1], nargs='+', metavar="BUILD-VARIANT",
                     choices=valid_build_variants() + valid_build_variant_combos(),
@@ -310,9 +312,7 @@ if 'release' in variants_to_build:
     variants_to_build.remove('release')
     variants_to_build = ['release'] + variants_to_build
     print(variants_to_build)
-        
+
 for this_variant_name in variants_to_build:
     verbose("Variant: " + this_variant_name)
-    run_build_for_variant(args.codeline, this_variant_name, args.mode)
-
-
+    run_build_for_variant(args.codeline, this_variant_name, args.mode, args.build_jdk)
