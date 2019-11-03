@@ -33,6 +33,7 @@ codelines_and_attributes = (
     # [ <codeline name>, <boot jdk to use>, <needs hgforest> ]
     ('jdk-jdk', 'sapmachine13', False),
     ('jdk-sandbox', 'sapmachine13', False),
+    ('jdk-sandbox-default', 'sapmachine13', False),
     ('jdk-submit', 'sapmachine13', False),
     ('jdk-updates-jdk11u-dev', 'sapmachine11', False),
     ('jdk-updates-jdk11u', 'sapmachine11', False),
