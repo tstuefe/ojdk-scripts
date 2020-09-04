@@ -166,6 +166,8 @@ def run_build_for_variant(codeline, variant_name, mode, build_jdk):
 
     configure_options.append("--with-boot-jdk=" + ojdk_root + "/jdks/" + boot_jdk)
 
+    configure_options.append("--with-gtest=" + "/shared/projects/openjdk/gtest/latest/")
+
     if build_jdk is not None:
         configure_options.append("--with-build-jdk=" + build_jdk)
 
