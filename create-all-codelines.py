@@ -205,14 +205,12 @@ def create_jdks_directory_if_needed():
         trc("jdks/sapmachine11 found, skipping.")
     else:
         run_command_and_return_stdout(["wget", "https://github.com/SAP/SapMachine/releases/download/sapmachine-11.0.8/sapmachine-jdk-11.0.8_linux-x64_bin.tar.gz"])
-        run_command_and_return_stdout(["tar", "-xf", "sapmachine-jdk-11.0.8_linux-x64_bin.tar.gz"])
-        run_command_and_return_stdout(["mv", "sapmachine-jdk-11", "sapmachine11"])
+        run_command_and_return_stdout(["tar", "--one-top-level=sapmachine11", "--strip-components=1", "-xf", "sapmachine-jdk-11.0.8_linux-x64_bin.tar.gz"])
     if pathlib.Path("sapmachine15").exists():
         trc("jdks/sapmachine15 found, skipping.")
     else:
         run_command_and_return_stdout(["wget", "https://github.com/SAP/SapMachine/releases/download/sapmachine-15/sapmachine-jdk-15_linux-x64_bin.tar.gz"])
-        run_command_and_return_stdout(["tar", "-xf", "sapmachine-jdk-15_linux-x64_bin.tar.gz"])
-        run_command_and_return_stdout(["mv", "sapmachine-jdk-15", "sapmachine15"])
+        run_command_and_return_stdout(["tar", "--one-top-level=sapmachine15", "--strip-components=1", "-xf", "sapmachine-jdk-15_linux-x64_bin.tar.gz"])
     popdir()
 
 
@@ -247,7 +245,7 @@ create_codeline_directory_from_git("sapmachine-head",   "git@github.com:tstuefe/
 
 create_codeline_directory_from_git("sapmachine-11",     "git@github.com:tstuefe/SapMachine.git", "sapmachine11")
 
-#create_codeline_directory_from_mercurial_unified("jdk-jdk11u-dev", "http://hg.openjdk.java.net/jdk-updates/jdk11u-dev/")
+create_codeline_directory_from_mercurial_unified("jdk-jdk11u-dev", "http://hg.openjdk.java.net/jdk-updates/jdk11u-dev/")
 
-#create_codeline_directory_from_mercurial_forest("jdk-jdk8u-dev", "http://hg.openjdk.java.net/jdk8u/jdk8u-dev/")
+create_codeline_directory_from_mercurial_forest("jdk-jdk8u-dev", "http://hg.openjdk.java.net/jdk8u/jdk8u-dev/")
 
