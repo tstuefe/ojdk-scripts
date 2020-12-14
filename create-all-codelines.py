@@ -228,6 +228,10 @@ args = parser.parse_args()
 if args.is_verbose:
     trc(str(args))
 
+cwd = os.getcwd()
+if not cwd.endswith("openjdk"):
+    sys.exit('Call from openjdk root dir');
+
 #####################################
 
 # Download boot jdk if necessary
