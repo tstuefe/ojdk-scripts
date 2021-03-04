@@ -151,8 +151,10 @@ def init_codeline_directory_1(codeline_name):
         "pushd source/build",
         "ln -s ../../output-fastdebug linux-x86_64-normal-server-fastdebug",
         "popd",
-        ". /shared/projects/ant/setenv.sh"
-        "bash ./bin/idea.sh"
+        "pushd source",
+        ". /shared/projects/ant/setenv.sh",
+        "bash ./bin/idea.sh",
+        "popd"
     ], "intellij_init.sh")
 
     # Also create the CDT workspace. We give it a good name since the name shows up in
@@ -245,9 +247,8 @@ create_codeline_directory_from_git("jdk-jdk",           "git@github.com:tstuefe/
 
 create_codeline_directory_from_git("jdk-jdk-orig",       "https://github.com/openjdk/jdk.git", "master")
 
-create_codeline_directory_from_git("sapmachine-head",   "git@github.com:tstuefe/SapMachine.git", "sapmachine")
-
-create_codeline_directory_from_git("sapmachine-11",     "git@github.com:tstuefe/SapMachine.git", "sapmachine11")
+# sapmachine: all releases are branches within that one repo
+create_codeline_directory_from_git("sapmachine",   "git@github.com:tstuefe/SapMachine.git", "sapmachine")
 
 create_codeline_directory_from_mercurial_unified("jdk-jdk11u-dev", "http://hg.openjdk.java.net/jdk-updates/jdk11u-dev/")
 
