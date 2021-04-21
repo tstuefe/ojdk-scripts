@@ -64,7 +64,7 @@ def delete_directory_safe(dir):
 
 openjdk_root = os.getcwd()
 gtest_dir = openjdk_root + "/gtest"
-bootjdk = "sapmachine15"
+bootjdk = "sapmachine16"
 
 
 def write_lines_to_file(lines, filename):
@@ -245,12 +245,13 @@ if not pathlib.Path(gtest_dir).exists():
 
 create_codeline_directory_from_git("jdk-jdk",           "git@github.com:tstuefe/jdk.git", "master")
 
-create_codeline_directory_from_git("jdk-jdk-orig",       "https://github.com/openjdk/jdk.git", "master")
-
 # sapmachine: all releases are branches within that one repo
 create_codeline_directory_from_git("sapmachine",   "git@github.com:tstuefe/SapMachine.git", "sapmachine")
 
 create_codeline_directory_from_mercurial_unified("jdk-jdk11u-dev", "http://hg.openjdk.java.net/jdk-updates/jdk11u-dev/")
 
-create_codeline_directory_from_mercurial_forest("jdk-jdk8u-dev", "http://hg.openjdk.java.net/jdk8u/jdk8u-dev/")
+# my personal fork, includes vitals
+create_codeline_directory_from_git("jdk-jdk8u", "git@github.com:tstuefe/jdk8u.git", "master")
+
+#create_codeline_directory_from_mercurial_forest("jdk-jdk8u-dev", "http://hg.openjdk.java.net/jdk8u/jdk8u-dev/")
 
