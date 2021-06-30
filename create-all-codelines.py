@@ -248,7 +248,9 @@ create_codeline_directory_from_git("jdk-jdk",           "git@github.com:tstuefe/
 # sapmachine: all releases are branches within that one repo
 create_codeline_directory_from_git("sapmachine",   "git@github.com:tstuefe/SapMachine.git", "sapmachine")
 
-create_codeline_directory_from_mercurial_unified("jdk-jdk11u-dev", "http://hg.openjdk.java.net/jdk-updates/jdk11u-dev/")
+
+create_codeline_directory_from_git("jdk-jdk11u-dev", "git@github.com:tstuefe/jdk11u-dev.git", "master")
+#create_codeline_directory_from_mercurial_unified("jdk-jdk11u-dev", "http://hg.openjdk.java.net/jdk-updates/jdk11u-dev/")
 
 # my personal fork, includes vitals
 create_codeline_directory_from_git("jdk-jdk8u", "git@github.com:tstuefe/jdk8u.git", "master")
